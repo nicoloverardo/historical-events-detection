@@ -1,4 +1,9 @@
-"""GloVe Embeddings + bi-LSTM + CRF"""
+"""
+GloVe Embeddings + bi-LSTM + CRF.
+Code taken and adapted from:
+
+https://github.com/guillaumegenthial/tf_ner/
+"""
 
 import functools
 from pathlib import Path

@@ -1,6 +1,7 @@
 import csv
 from os import stat
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import show
 import numpy as np
 import pandas as pd
 import scipy
@@ -8,6 +9,8 @@ from scipy import spatial
 from sklearn.decomposition import PCA
 
 from tqdm import tqdm
+
+from text import PreProcessing
 
 class EmbeddingsHandler():
 
@@ -30,6 +33,13 @@ class EmbeddingsHandler():
     @staticmethod
     def vec(words, w):
         return words.loc[w].values
+    
+    @staticmethod
+    def filter_indices(data):
+        filtered_idxs = [PreProcessing.cleanText(idx) for idx in data.index.values]
+        filtered_idxs = [i for i in filtered_idxs if i]
+
+        return data[data.index.isin(filtered_idxs)]
 
     @staticmethod
     def cosine_distance(emb1, emb2):
@@ -37,14 +47,24 @@ class EmbeddingsHandler():
 
     @staticmethod
     def plot_words(data, start=0, end=100):
-        Y = EmbeddingsHandler.reduce_dim(data)
-        Y = Y[start:end]
+        if not isinstance(data, list):
+            data = [data]
+            
+        for j in data:
+            Y = EmbeddingsHandler.reduce_dim(j)
+            Y = Y[start:end]
 
-        plt.scatter(Y[:, 0], Y[:, 1])
+            plt.scatter(Y[:, 0], Y[:, 1])
 
-        for label, x, y in zip(data.index.values, Y[:, 0], Y[:, 1]):
-            plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords="offset points")
+            for label, x, y in zip(j.index.values, Y[:, 0], Y[:, 1]):
+                plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords="offset points")
+
         plt.show()
+
+    @staticmethod
+    def plot_words_comp(data1, data2, start=0, end=100):
+        EmbeddingsHandler.plot_words(data1, start=start, end=end)
+        EmbeddingsHandler.plot_words(data1, start=start, end=end)
 
     @staticmethod
     def to_dict(data, progress=False):
@@ -65,7 +85,7 @@ class EmbeddingsHandler():
 
         R = scipy.linalg.orthogonal_procrustes(A, B)[0]
 
-        if not np.linalg.det(R) > 0:
+        if np.linalg.det(R) <= 0:
             raise ValueError("Not a proper rotation: determinant is > 0")
 
         return {k:v for k,v in zip(voc, np.dot(A, R))}
