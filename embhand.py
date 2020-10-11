@@ -1,7 +1,6 @@
 import csv
 from os import stat
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import show
 import numpy as np
 import pandas as pd
 import scipy
@@ -60,11 +59,6 @@ class EmbeddingsHandler():
                 plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords="offset points")
 
         plt.show()
-
-    @staticmethod
-    def plot_words_comp(data1, data2, start=0, end=100):
-        EmbeddingsHandler.plot_words(data1, start=start, end=end)
-        EmbeddingsHandler.plot_words(data1, start=start, end=end)
 
     @staticmethod
     def to_dict(data, progress=False):
