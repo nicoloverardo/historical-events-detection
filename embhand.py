@@ -94,18 +94,20 @@ class EmbeddingsHandler():
 
     @staticmethod
     def plot_word_vectors(df1, df2, word):
-        df_1 = EmbeddingsHandler.get_df(df1)
-        df_2 = EmbeddingsHandler.get_df(df2)
-
-        v1 = df_1.iloc[df_1[df_1["word"] == word].index.values[0], 1:].to_numpy()
-        v2 = df_2.iloc[df_2[df_2["word"] == word].index.values[0], 1:].to_numpy()
-
         ax = plt.axes()
-        ax.arrow(0.0, 0.0, v1[0], v1[1], head_width=0.2, head_length=0.2, label="glove", fc='k', ec='k')
-        ax.arrow(0.0, 0.0, v2[0], v2[1], head_width=0.2, head_length=0.2, label="histo", fc='g', ec='g')
+
+        EmbeddingsHandler._draw_vector(df1, word, ax, "k")
+        EmbeddingsHandler._draw_vector(df2, word, ax, "g")
+
         plt.grid()
 
         plt.xlim(-5, 5)
         plt.ylim(-5, 5)
 
         plt.show()
+
+    @staticmethod
+    def _draw_vector(df, word, ax, color):
+        df_red = EmbeddingsHandler.get_df(df)
+        vec = df_red.iloc[df_red[df_red["word"] == word].index.values[0], 1:].to_numpy()
+        ax.arrow(0.0, 0.0, vec[0], vec[1], head_width=0.2, head_length=0.2, fc=color, ec=color)
