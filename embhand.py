@@ -2,7 +2,9 @@ import csv
 from os import stat
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.lib.mixins import _inplace_binary_method
 import pandas as pd
+from pandas.io.stata import stata_epoch
 import scipy
 from scipy import spatial
 from sklearn.decomposition import PCA
@@ -34,11 +36,28 @@ class EmbeddingsHandler():
         return words.loc[w].values
     
     @staticmethod
-    def filter_indices(data):
+    def filter_indices(data, sort_indices=True):
         filtered_idxs = [PreProcessing.cleanText(idx) for idx in data.index.values]
         filtered_idxs = [i for i in filtered_idxs if i]
 
-        return data[data.index.isin(filtered_idxs)]
+        df = data[data.index.isin(filtered_idxs)]
+
+        if sort_indices:
+            df.sort_index(inplace=True)
+
+        return df
+    
+    @staticmethod
+    def get_indices_intersection(df1, df2, sort_indices=True):
+        inters = df1.index.intersection(df2.index)
+
+        df1, df2 = (df1[df1.index.isin(inters)], df2[df2.index.isin(inters)])
+
+        if sort_indices:
+            df1.sort_index(inplace=True)
+            df2.sort_index(inplace=True)
+
+        return (df1, df2)
 
     @staticmethod
     def cosine_distance(emb1, emb2):
