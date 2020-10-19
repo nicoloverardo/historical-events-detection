@@ -2,8 +2,6 @@ import html
 import json
 import urllib
 import sparql
-import wikipedia
-
 
 class WikiWrapper():
 
@@ -17,13 +15,6 @@ class WikiWrapper():
             names.append(row[0].split("/")[-1])
         
         return names
-    
-    @staticmethod
-    def download_summary(x):
-        try:
-            return wikipedia.summary(x.Name)
-        except:
-            return ""
     
     @staticmethod
     def get_extract(x):

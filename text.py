@@ -4,6 +4,7 @@ import string
 class PreProcessing():
     @staticmethod
     def cleanText(x):
+        x = x.encode("ascii", "ignore").decode()
         tokens = nltk.word_tokenize(x)
         tokens = [w.lower() for w in tokens]
         words = [word for word in tokens if word.isalpha()]
