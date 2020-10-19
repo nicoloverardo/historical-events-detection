@@ -13,6 +13,19 @@ import numpy as np
 class GloveVocab():
 
     @staticmethod
+    def binarize_txt_label(path):
+        with Path(path).open("r") as f:
+            data = f.readlines()
+        
+        for i, line in enumerate(data):
+            if "I-EVENT_MENTION" in line:
+                data[i] = line.replace("I-EVENT_MENTION", "B-EVENT_MENTION")
+        
+        with open(path, 'w') as f:
+            for item in data:
+                f.write("%s\n" % item)
+
+    @staticmethod
     def _create_words_tags_file(input, output, idx):
         sentence = ""
         with Path(input).open("r") as input_f:

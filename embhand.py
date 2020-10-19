@@ -1,17 +1,15 @@
 import csv
-from os import stat
+
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.lib.mixins import _inplace_binary_method
 import pandas as pd
-from pandas.io.stata import stata_epoch
 import scipy
 from scipy import spatial
 from sklearn.decomposition import PCA
-
 from tqdm import tqdm
 
 from text import PreProcessing
+
 
 class EmbeddingsHandler():
 

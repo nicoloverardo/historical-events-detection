@@ -9,6 +9,7 @@ import functools
 from pathlib import Path
 
 import numpy as np
+import json
 import tensorflow as tf
 from tensorflow_estimator.python.estimator import estimator
 from tf_metrics import precision, recall, f1
@@ -85,7 +86,8 @@ class BiLSTM():
 
         # CRF
         logits = tf.layers.dense(output, num_tags)
-        crf_params = tf.get_variable("crf", [num_tags, num_tags], dtype=tf.float32)
+        #crf_params = tf.get_variable("crf", [num_tags, num_tags], dtype=tf.float32)
+        crf_params = tf.compat.v1.get_variable("crf", [num_tags, num_tags], dtype=tf.float32)
         pred_ids, _ = tf.contrib.crf.crf_decode(logits, crf_params, nwords)
 
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -109,21 +111,25 @@ class BiLSTM():
             # Metrics
             weights = tf.sequence_mask(nwords)
             metrics = {
-                'acc': tf.metrics.accuracy(tags, pred_ids, weights),
+                #'acc': tf.metrics.accuracy(tags, pred_ids, weights),
+                'acc': tf.compat.v1.metrics.accuracy(tags, pred_ids, weights),
                 'precision': precision(tags, pred_ids, num_tags, indices, weights),
                 'recall': recall(tags, pred_ids, num_tags, indices, weights),
                 'f1': f1(tags, pred_ids, num_tags, indices, weights),
             }
             for metric_name, op in metrics.items():
-                tf.summary.scalar(metric_name, op[1])
+                #tf.summary.scalar(metric_name, op[1])
+                tf.compat.v1.summary.scalar(metric_name, op[1])
 
             if mode == tf.estimator.ModeKeys.EVAL:
                 return tf.estimator.EstimatorSpec(
                     mode, loss=loss, eval_metric_ops=metrics)
 
             elif mode == tf.estimator.ModeKeys.TRAIN:
-                train_op = tf.train.AdamOptimizer().minimize(
-                    loss, global_step=tf.train.get_or_create_global_step())
+                #train_op = tf.train.AdamOptimizer().minimize(
+                #    loss, global_step=tf.train.get_or_create_global_step())
+                train_op = tf.compat.v1.train.AdamOptimizer().minimize(
+                    loss, global_step=tf.compat.v1.train.get_or_create_global_step())
                 return tf.estimator.EstimatorSpec(
                     mode, loss=loss, train_op=train_op)
     
@@ -147,3 +153,53 @@ class BiLSTM():
     @staticmethod
     def ftags(name, datadir):
         return str(Path(datadir, '{}.tags.txt'.format(name)))
+
+    @staticmethod
+    def pretty_print(preds):
+        for text in preds:
+            words = [w[0] for w in text]
+            ps = [p[1] for p in text]
+            lengths = [max(len(w), len(p)) for w, p in zip(words, ps)]
+            padded_words = [w + (l - len(w)) * ' ' for w, l in zip(words, lengths)]
+            padded_preds = [p+ (l - len(p)) * ' ' for p, l in zip(ps, lengths)]
+            print('words: {}'.format(' '.join(padded_words)))
+            print('preds: {}'.format(' '.join(padded_preds)))
+
+            if len(preds) > 1:
+                print("\n")
+
+    @staticmethod
+    def predict_input_fn(line):
+        # Words
+        words = [w.encode() for w in line.strip().split()]
+        nwords = len(words)
+
+        # Wrapping in Tensors
+        words = tf.constant([words], dtype=tf.string)
+        nwords = tf.constant([nwords], dtype=tf.int32)
+
+        return (words, nwords), None
+    
+    @staticmethod
+    def predict(lines, params, datadir, modeldir):
+        with Path(params).open() as f:
+            params = json.load(f)
+
+        params['words'] = str(Path(datadir, 'vocab.words.txt'))
+        params['chars'] = str(Path(datadir, 'vocab.chars.txt'))
+        params['tags'] = str(Path(datadir, 'vocab.tags.txt'))
+        params['glove'] = str(Path(datadir, 'glove.npz'))
+
+        estimator = tf.estimator.Estimator(BiLSTM.model_fn, modeldir, params=params)
+        return [BiLSTM._do_prediction(line, estimator) for line in lines]
+
+    @staticmethod
+    def _do_prediction(line, estimator):
+        predict_inpf = functools.partial(BiLSTM.predict_input_fn, line)
+
+        result = []
+        for pred in estimator.predict(predict_inpf):
+            preds = [p.decode() for p in pred['tags']]
+            result = list(zip(line.strip().split(), preds))
+            break
+        return result
