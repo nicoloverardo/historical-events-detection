@@ -12,7 +12,11 @@ from text import PreProcessing
 
 
 class EmbeddingsHandler():
-
+    """
+    Handles various operations for pre-trained
+    embeddings txt files
+    """
+    
     @staticmethod
     def find_closest_embeddings(embeddings_dict, embedding, limit=6):
         if limit is None:

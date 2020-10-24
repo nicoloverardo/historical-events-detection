@@ -1,20 +1,39 @@
-from pathlib import Path
-
+from array import array
 import pickle
+from pathlib import Path
+from typing import Tuple
+
 import numpy as np
-from tensorflow.python.types.core import Value
+import numpy
+import tensorflow as tf
+from tensorflow.keras import Input, Sequential
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.initializers import Constant
+from tensorflow.keras.layers import (LSTM, Bidirectional, Dense, Embedding,
+                                     TimeDistributed)
+from tensorflow.keras.layers.experimental.preprocessing import \
+    TextVectorization
+from tensorflow.keras.optimizers import Adam
 from tf2crf import CRF
 from tqdm import tqdm
 
-import tensorflow as tf
-from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.initializers import Constant
-from tensorflow.keras import Sequential, Input
-from tensorflow.keras.layers import Embedding, Bidirectional, LSTM, TimeDistributed, Dense
-from tensorflow.keras.optimizers import Adam
 
 class BilstmCrf():
+    """
+    BiLSTM + CRF model in Tensorflow 2+ 
+    for NER tagging.
+
+    Parameters
+    ----------
+    data_path : str (default=None)
+        The location to the folder containing the train.txt,
+        dev.txt and test.txt text files in the IOB/BIO format.
+    
+    glove : str, array (default=None)
+        The location of the pre-trained glove txt file or the
+        already loaded in-memory embeddings matrix.
+    """
+
     def __init__(self, data_path=None, glove=None):
         self.data_path = data_path
         self.glove = glove
@@ -23,7 +42,21 @@ class BilstmCrf():
         self.max_tokens = 20000
         self.output_sequence_length = 200
 
-    def _get_data(self, path):
+    def _get_data(self, path) -> Tuple[list, list]:
+        """
+        Reads an IOB/BIO text file and outputs a tuple of lists
+        containing sentences and their labels.
+
+        Parameters
+        ----------
+        path : str
+            The location of the txt file to read
+
+        Returns
+        -------
+        tuple of lists : ([], [])
+        """
+
         with Path(path).open("r") as f:
             sentences, labels, sentence, tag = [], [], [], []
 
@@ -41,7 +74,24 @@ class BilstmCrf():
         
             return sentences, labels
     
-    def _get_vectorizer(self, data=None, settings=None):
+    def _get_vectorizer(self, data=None, settings=None) -> TextVectorization:
+        """
+        Restore or create and fit a TextVectorization layer
+
+        Parameters
+        ----------
+        data : array-like or list (default=None)
+            The train data used to fit the vectorizer
+
+        settings : dict (default=None)
+            Dictionary containing the settings of the vectorizer.
+            Used to restore it.
+
+        Returns
+        -------
+        vectorizer : TextVectorization
+        """
+
         if settings is None:
             if data is None:
                 raise ValueError("Not restoring vectorizer, data is needed.")
@@ -63,8 +113,11 @@ class BilstmCrf():
     def get_embeddings(self, voc=None, word_index=None, 
                        embedding_dim=300,
                        path=None, progress=True, 
-                       save=True, save_name=None):
+                       save=True, save_name=None) -> np.ndarray:
+
         """
+        Computes the embedding matrix from a pre-trained embeddings txt file
+
         Taken and adapted from:
         https://github.com/guillaumegenthial/tf_ner/
         """
@@ -126,6 +179,10 @@ class BilstmCrf():
         return embeddings
     
     def create_model(self, input_size, num_labels, embeddings, lstm_size=128):
+        """
+        Creates the neural network model
+        """
+
         crf = CRF()
 
         self.model = Sequential([
@@ -144,6 +201,11 @@ class BilstmCrf():
                            metrics=crf.accuracy)
     
     def prepare_data(self):
+        """
+        Reads, pre-process and loads data from the
+        `data_path` of the instance.
+        """
+
         self.X_train, self.y_train = self._get_data(self.data_path + "train.txt")
         self.X_val, self.y_val = self._get_data(self.data_path + "dev.txt")
         self.X_test, self.y_test = self._get_data(self.data_path + "test.txt")
@@ -152,6 +214,9 @@ class BilstmCrf():
         self.vectorizer_y = self._get_vectorizer(self.y_train)
 
         self._set_voc_wordindex()
+
+        for data in [self.X_train, self.X_val, self.X_test]:
+            data = self.vectorizer_x(np.array([[s] for s in data])).numpy()
 
         self.X_train = self.vectorizer_x(np.array([[s] for s in self.X_train])).numpy()
         self.X_val = self.vectorizer_x(np.array([[s] for s in self.X_val])).numpy()
@@ -162,11 +227,20 @@ class BilstmCrf():
         self.y_test = self.vectorizer_y(np.array([[s] for s in self.y_test])).numpy()
 
     def _set_voc_wordindex(self):
+        """
+        Set vocabularies for words and labels and word index
+        to instance variables.
+        """
+
         self.voc_x = self.vectorizer_x.get_vocabulary()
         self.voc_y = self.vectorizer_y.get_vocabulary()
         self.word_index = dict(zip(self.voc_x, range(len(self.voc_x))))
 
     def train(self, embeddings=None):
+        """
+        Full training pipeline
+        """
+
         self.prepare_data()
 
         if embeddings is None:
@@ -191,6 +265,11 @@ class BilstmCrf():
                        callbacks=[es])
 
     def evaluate(self, data=None, labels=None):
+        """
+        Evaluates the model on the specified `data` or
+        on the test set and prints the accuracy.
+        """
+
         if data is None:
             data = self.X_test
 
@@ -204,6 +283,8 @@ class BilstmCrf():
     
     def _pretty_print(self, preds):
         """
+        Print predictions alongside their words.
+
         Taken and adapted from:
         https://github.com/guillaumegenthial/tf_ner/
         """
@@ -213,14 +294,30 @@ class BilstmCrf():
             ps = [p[1] for p in text]
             lengths = [max(len(w), len(p)) for w, p in zip(words, ps)]
             padded_words = [w + (l - len(w)) * ' ' for w, l in zip(words, lengths)]
-            padded_preds = [p+ (l - len(p)) * ' ' for p, l in zip(ps, lengths)]
+            padded_preds = [p + (l - len(p)) * ' ' for p, l in zip(ps, lengths)]
             print('words: {}'.format(' '.join(padded_words)))
             print('preds: {}'.format(' '.join(padded_preds)))
 
             if len(preds) > 1:
                 print("\n")
 
-    def predict(self, data, print=True):
+    def predict(self, data, print=True) -> list:
+        """
+        Predict word tags of the sentences in `data`
+
+        Parameters
+        ----------
+        data : array-like or list
+            The sentence(s)
+        
+        print : boolean (default=True)
+            Whether to print the predictions or not
+        
+        Returns
+        -------
+        result : list
+        """
+
         x = self.vectorizer_x(np.array(data)).numpy()
 
         preds = self.model.predict(x)
@@ -237,6 +334,10 @@ class BilstmCrf():
         return result
     
     def save(self, path=None):
+        """
+        Saves the trained model to disk for later usage
+        """
+
         if path is None:
             path = self.data_path
 
@@ -251,6 +352,10 @@ class BilstmCrf():
         self.model.save_weights(path)
 
     def restore_model(self, embeddings, path):
+        """
+        Restores a trained model from `path`
+        """
+        
         with Path(path, "vectorizers.pkl").open("rb") as f:
             wx, cx, cy, wy = pickle.load(f)
 
