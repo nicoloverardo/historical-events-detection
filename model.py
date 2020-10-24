@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pickle
 import numpy as np
+from tensorflow.python.types.core import Value
 from tf2crf import CRF
 from tqdm import tqdm
 
@@ -40,12 +41,22 @@ class BilstmCrf():
         
             return sentences, labels
     
-    def _get_vectorizer(self, data):
-        vectorizer = TextVectorization(max_tokens=self.max_tokens,
-            output_sequence_length=self.output_sequence_length, standardize=None)
+    def _get_vectorizer(self, data=None, settings=None):
+        if settings is None:
+            if data is None:
+                raise ValueError("Not restoring vectorizer, data is needed.")
 
-        text_ds = tf.data.Dataset.from_tensor_slices(data).batch(self.batch_size)
-        vectorizer.adapt(text_ds)
+            vectorizer = TextVectorization(max_tokens=self.max_tokens,
+                output_sequence_length=self.output_sequence_length, standardize=None)
+
+            text_ds = tf.data.Dataset.from_tensor_slices(data).batch(self.batch_size)
+            vectorizer.adapt(text_ds)
+        else:
+            c, w = settings
+
+            vectorizer = TextVectorization(c['max_tokens'],
+                output_sequence_length=c['output_sequence_length'], standardize=None)
+            vectorizer.set_weights(w)
 
         return vectorizer
 
@@ -140,9 +151,7 @@ class BilstmCrf():
         self.vectorizer_x = self._get_vectorizer(self.X_train)
         self.vectorizer_y = self._get_vectorizer(self.y_train)
 
-        self.voc_x = self.vectorizer_x.get_vocabulary()
-        self.voc_y = self.vectorizer_y.get_vocabulary()
-        self.word_index = dict(zip(self.voc_x, range(len(self.voc_x))))
+        self._set_voc_wordindex()
 
         self.X_train = self.vectorizer_x(np.array([[s] for s in self.X_train])).numpy()
         self.X_val = self.vectorizer_x(np.array([[s] for s in self.X_val])).numpy()
@@ -151,6 +160,11 @@ class BilstmCrf():
         self.y_train = self.vectorizer_y(np.array([[s] for s in self.y_train])).numpy()
         self.y_val = self.vectorizer_y(np.array([[s] for s in self.y_val])).numpy()
         self.y_test = self.vectorizer_y(np.array([[s] for s in self.y_test])).numpy()
+
+    def _set_voc_wordindex(self):
+        self.voc_x = self.vectorizer_x.get_vocabulary()
+        self.voc_y = self.vectorizer_y.get_vocabulary()
+        self.word_index = dict(zip(self.voc_x, range(len(self.voc_x))))
 
     def train(self, embeddings=None):
         self.prepare_data()
@@ -168,7 +182,7 @@ class BilstmCrf():
                           embeddings=embeddings)
 
         es = EarlyStopping(monitor='loss', verbose=1,
-                                              mode='min', patience = 2, min_delta=0.1)
+                           mode='min', patience = 2, min_delta=0.1)
 
         self.model.fit(self.X_train, self.y_train,
                        batch_size=self.batch_size, 
@@ -179,6 +193,7 @@ class BilstmCrf():
     def evaluate(self, data=None, labels=None):
         if data is None:
             data = self.X_test
+
         if labels is None:
             labels = self.y_test
         
@@ -239,17 +254,10 @@ class BilstmCrf():
         with Path(path, "vectorizers.pkl").open("rb") as f:
             wx, cx, cy, wy = pickle.load(f)
 
-        self.vectorizer_x = TextVectorization(cx['max_tokens'],
-            output_sequence_length=cx['output_sequence_length'], standardize=None)
-        self.vectorizer_x.set_weights(wx)
-
-        self.vectorizer_y = TextVectorization(cy['max_tokens'],
-            output_sequence_length=cy['output_sequence_length'], standardize=None)
-        self.vectorizer_y.set_weights(wy)
+        self.vectorizer_x = self._get_vectorizer(settings=(cx, wx))
+        self.vectorizer_y = self._get_vectorizer(settings=(cy, wy))
         
-        self.voc_x = self.vectorizer_x.get_vocabulary()
-        self.voc_y = self.vectorizer_y.get_vocabulary()
-        self.word_index = dict(zip(self.voc_x, range(len(self.voc_x))))
+        self._set_voc_wordindex()
 
         self.create_model(input_size=len(self.voc_x) + 2,
                           num_labels=len(self.voc_y),
