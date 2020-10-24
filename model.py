@@ -1,10 +1,7 @@
-from array import array
 import pickle
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
-import numpy
 import tensorflow as tf
 from tensorflow.keras import Input, Sequential
 from tensorflow.keras.callbacks import EarlyStopping
@@ -42,7 +39,7 @@ class BilstmCrf():
         self.max_tokens = 20000
         self.output_sequence_length = 200
 
-    def _get_data(self, path) -> Tuple[list, list]:
+    def _get_data(self, path):
         """
         Reads an IOB/BIO text file and outputs a tuple of lists
         containing sentences and their labels.
