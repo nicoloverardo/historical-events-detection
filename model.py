@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 class BilstmCrf():
     """
-    BiLSTM + CRF model in Tensorflow 2+ 
+    BiLSTM + CRF model for Tensorflow 2.x
     for NER tagging.
 
     Parameters
@@ -151,21 +151,13 @@ class BilstmCrf():
             print("Found %s word vectors." % len(embeddings_index))
 
         num_tokens = len(voc) + 2
-        hits = 0
-        misses = 0
 
         embeddings = np.zeros((num_tokens, embedding_dim))
-        items = tqdm(word_index.items()) if progress else word_index.items()
-        for word, i in items:
+        for word, i in word_index.items():
             embedding_vector = embeddings_index.get(word)
+
             if embedding_vector is not None:
                 embeddings[i] = embedding_vector
-                hits += 1
-            else:
-                misses += 1
-
-        if progress:
-            print("Converted %d words (%d misses)" % (hits, misses))
 
         if save:
             if save_name is None:
@@ -178,6 +170,21 @@ class BilstmCrf():
     def create_model(self, input_size, num_labels, embeddings, lstm_size=128):
         """
         Creates the neural network model
+
+        Parameters
+        ----------
+        input_size : int
+            The size of the input. Usally it is the length
+            of the vocabulary + 2 (for OOV and unknown tokens)
+        
+        num_labels : int
+            The number of unique tags
+        
+        embeddings : np.ndarray
+            The pre-trained embedding matrix with weights
+        
+        lstm_size : int (default=128)
+            The dimensionality of the output space
         """
 
         crf = CRF()
@@ -236,6 +243,11 @@ class BilstmCrf():
     def train(self, embeddings=None):
         """
         Full training pipeline
+
+        Parameters
+        ----------
+        embeddings : np.ndarray
+            The pre-trained embedding matrix with weights
         """
 
         self.prepare_data()
@@ -265,6 +277,14 @@ class BilstmCrf():
         """
         Evaluates the model on the specified `data` or
         on the test set and prints the accuracy.
+
+        Parameters
+        ----------
+        data : array-like or list (default=None)
+            The data on which we want to evaluate the model
+        
+        labels : array-like or list (default=None)
+            The true labels of `data`.
         """
 
         if data is None:
@@ -332,7 +352,14 @@ class BilstmCrf():
     
     def save(self, path=None):
         """
-        Saves the trained model to disk for later usage
+        Saves the trained model to disk for later usage.
+
+        Parameters
+        ----------
+
+        path : str
+            The path where the model and the vectorizers
+            will be saved.
         """
 
         if path is None:
@@ -350,7 +377,16 @@ class BilstmCrf():
 
     def restore_model(self, embeddings, path):
         """
-        Restores a trained model from `path`
+        Restores a trained model from `path`.
+
+        Parameters
+        ----------
+        embeddings : np.ndarray
+            The pre-trained embedding matrix with weights.
+
+        path : str
+            The path where the model and the vectorizers
+            are saved.
         """
         
         with Path(path, "vectorizers.pkl").open("rb") as f:
