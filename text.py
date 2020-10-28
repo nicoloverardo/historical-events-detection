@@ -1,4 +1,3 @@
-from pathlib import Path
 import nltk
 import string
 
@@ -15,5 +14,16 @@ class PreProcessing():
         stopwords.extend(string.punctuation)
         words = [w for w in stripped if w.isalpha() and not w in stopwords]
         words = [w for w in words if len(w) > 1 and w.isalpha()]
+    
+        return " ".join(words)
+    
+    @staticmethod
+    def small_clean(x):
+        x = x.encode("ascii", "ignore").decode()
+        tokens = nltk.word_tokenize(x)
+        words = [word for word in tokens if word.isalnum()]
+        table = str.maketrans('', '', string.punctuation)
+        stripped = [w.translate(table) for w in tokens]
+        words = [w for w in stripped if len(w) > 1]
     
         return " ".join(words)
