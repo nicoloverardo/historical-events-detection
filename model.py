@@ -219,9 +219,6 @@ class BilstmCrf():
 
         self._set_voc_wordindex()
 
-        for data in [self.X_train, self.X_val, self.X_test]:
-            data = self.vectorizer_x(np.array([[s] for s in data])).numpy()
-
         self.X_train = self.vectorizer_x(np.array([[s] for s in self.X_train])).numpy()
         self.X_val = self.vectorizer_x(np.array([[s] for s in self.X_val])).numpy()
         self.X_test = self.vectorizer_x(np.array([[s] for s in self.X_test])).numpy()
