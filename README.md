@@ -9,7 +9,7 @@ Here we report the order one should follow when looking at this work:
 1. [nerhisto.ipynb](/nerhisto.ipynb): sentence tagging on the Histo dataset using a custom built BiLSTM + CRF model for TensorFlow version > 2.
 2. [embcomp.ipynb](/embcomp.ipynb): comparison of  glove.840B.300d (Common Crawl) and HistoGlove (Glove trained on historical words).
 3. [wikievents.ipynb](/wikievents.ipynb): retrieval and classification of 2.000 Wikipedia pages (1.000 pertaining historical events, 1.000 of other topics) using a LSTM neural network.
-4. [nerwiki.ipynb](/nerwiki.ipynb): sentence tagging on the custom wikipedia dataset built at the previous step. Comparison with results from spaCy.
+4. [nerwiki.ipynb](/nerwiki.ipynb): sentence tagging on the custom wikipedia dataset built at the previous step. Comparison with results from spaCy. You can watch the output of last two `displacy.render` cells [here](/render.png).
 
 ## Description
 Reported from the project assignment:
