@@ -5,3 +5,12 @@ Project for the Knowledge Extraction and Information Retrieval exam. Reported fr
 
 
 The dataset contained in the `data/histo` folder is called HISTO. You can find the official repository [here](https://github.com/dhfbk/Histo).
+
+
+## Usage
+Here we report the order one should follow when looking at this work:
+
+1. [nerhisto.ipynb](/nerhisto.ipynb): sentence tagging on the Histo dataset using a custom built BiLSTM + CRF model for TensorFlow > 2.
+2. [embcomp.ipynb](/embcomp.ipynb): comparison of  glove.840B.300d (Common Crawl) and HistoGlove (Glove trained on historical words).
+3. [wikievents.ipynb](/wikievents.ipynb): retrieval and classification of 2.000 Wikipedia pages (1.000 pertaining historical events, 1.000 of other topics) using a LSTM neural network.
+4. [nerwiki.ipynb](/nerwiki.ipynb): sentence tagging on the custom wikipedia dataset built at the previous step. Comparison with results from spaCy.
