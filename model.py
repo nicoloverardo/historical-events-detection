@@ -4,15 +4,15 @@ from pathlib import Path
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Input, Sequential
+import tensorflow.keras.backend as K
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.initializers import Constant
 from tensorflow.keras.layers import (LSTM, Bidirectional, Dense, Embedding,
-                                     TimeDistributed)
+                                     TimeDistributed, Dropout)
 from tensorflow.keras.layers.experimental.preprocessing import \
     TextVectorization
 from tensorflow.keras.optimizers import Adam
 from tf2crf import CRF
-from tqdm import tqdm
 
 
 class BilstmCrf():
@@ -34,8 +34,8 @@ class BilstmCrf():
     def __init__(self, data_path=None, glove=None):
         self.data_path = data_path
         self.glove = glove
-        self.batch_size = 64
-        self.epochs = 25
+        self.batch_size = 32
+        self.epochs = 100
         self.max_tokens = 20000
         self.output_sequence_length = 200
 
@@ -93,8 +93,9 @@ class BilstmCrf():
             if data is None:
                 raise ValueError("Not restoring vectorizer, data is needed.")
 
-            vectorizer = TextVectorization(max_tokens=self.max_tokens,
-                output_sequence_length=self.output_sequence_length, standardize=None)
+            #vectorizer = TextVectorization(max_tokens=self.max_tokens,
+            #    output_sequence_length=self.output_sequence_length, standardize=None)
+            vectorizer = TextVectorization(standardize=None)
 
             text_ds = tf.data.Dataset.from_tensor_slices(data).batch(self.batch_size)
             vectorizer.adapt(text_ds)
@@ -194,15 +195,17 @@ class BilstmCrf():
             Embedding(input_size, 300, 
                       embeddings_initializer=Constant(embeddings),
                       trainable=False),
+            Dropout(0.5),
             Bidirectional(LSTM(lstm_size, return_sequences=True)),
             Bidirectional(LSTM(lstm_size, return_sequences=True)),
             TimeDistributed(Dense(num_labels, activation=None)),
+            Dropout(0.5),
             crf
         ])
         
         self.model.compile(loss=crf.loss,
                            optimizer=Adam(),
-                           metrics=crf.accuracy)
+                           metrics=[crf.accuracy])
     
     def prepare_data(self):
         """
