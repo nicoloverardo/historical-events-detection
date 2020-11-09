@@ -3,12 +3,13 @@ from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import Input, Sequential
 import tensorflow.keras.backend as K
+from sklearn.metrics import classification_report
+from tensorflow.keras import Input, Sequential
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.initializers import Constant
-from tensorflow.keras.layers import (LSTM, Bidirectional, Dense, Embedding,
-                                     TimeDistributed, Dropout)
+from tensorflow.keras.layers import (LSTM, Bidirectional, Dense, Dropout,
+                                     Embedding, TimeDistributed)
 from tensorflow.keras.layers.experimental.preprocessing import \
     TextVectorization
 from tensorflow.keras.optimizers import Adam
@@ -402,3 +403,15 @@ class BilstmCrf():
                           embeddings=embeddings)
 
         self.model.load_weights(path)
+
+    def print_classif_report(self, X, y):
+        y_pred = self.predict(X, False)
+        y_pred_flat = [l for sent in y_pred for w, l in sent]
+        y_true_flat = []
+
+        for sent in y:
+            ls = sent.strip().split()
+            for l in ls:
+                y_true_flat.append(l)
+
+        print(classification_report(y_true_flat, y_pred_flat))
