@@ -94,8 +94,6 @@ class BilstmCrf():
             if data is None:
                 raise ValueError("Not restoring vectorizer, data is needed.")
 
-            #vectorizer = TextVectorization(max_tokens=self.max_tokens,
-            #    output_sequence_length=self.output_sequence_length, standardize=None)
             vectorizer = TextVectorization(standardize=None)
 
             text_ds = tf.data.Dataset.from_tensor_slices(data).batch(self.batch_size)
@@ -404,14 +402,52 @@ class BilstmCrf():
 
         self.model.load_weights(path)
 
-    def print_classif_report(self, X, y):
-        y_pred = self.predict(X, False)
-        y_pred_flat = [l for sent in y_pred for w, l in sent]
-        y_true_flat = []
+    def _flat_pred(self, y):
+        """
+        Flattens predictions or true labels so that
+        they can be used with scikit-learn metrics
+        functions
+
+        Parameters
+        ----------
+        y : list
+            List of labels/predictions
+        
+        Returns
+        -------
+        A one-dimensional list
+        """
+
+        y_flat = []
 
         for sent in y:
-            ls = sent.strip().split()
-            for l in ls:
-                y_true_flat.append(l)
+            if isinstance(sent, tuple):
+                for _, l in sent:
+                    y_flat.append(l)
+            elif isinstance(sent, str):
+                ls = sent.strip().split()
+                for l in ls:
+                    y_flat.append(l)
+            else:
+                raise ValueError()
+
+        return y_flat
+
+    def print_classif_report(self, X, y):
+        """
+        Predicts and print a classification report
+
+        Parameters
+        ----------
+        X : array-like or list
+            The sentence(s)
+        
+        y : array-like or list
+            True labels
+        """
+        
+        y_pred = self.predict(X, False)
+        y_pred_flat = self._flat_pred(y_pred)
+        y_true_flat = self._flat_pred(y)
 
         print(classification_report(y_true_flat, y_pred_flat))
