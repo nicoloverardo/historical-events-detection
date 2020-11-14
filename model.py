@@ -37,8 +37,6 @@ class BilstmCrf():
         self.glove = glove
         self.batch_size = 32
         self.epochs = 100
-        self.max_tokens = 20000
-        self.output_sequence_length = 200
 
     def _get_data(self, path):
         """
@@ -421,7 +419,7 @@ class BilstmCrf():
         y_flat = []
 
         for sent in y:
-            if isinstance(sent, tuple):
+            if isinstance(sent, list):
                 for _, l in sent:
                     y_flat.append(l)
             elif isinstance(sent, str):
