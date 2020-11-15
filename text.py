@@ -45,7 +45,9 @@ class PreProcessing():
             
             ents = PreProcessing.merge_ents(ents) if len(ents) > 0 else ents 
         
-            sp_preds.append({"text": str_sent.strip() + ".", "ents": ents, "title": None})
+            sp_preds.append({"text": str_sent.strip() + ".",
+                             "ents": ents, 
+                             "title": None})
 
         return sp_preds
 
@@ -54,7 +56,9 @@ class PreProcessing():
         ents_ = []
         for i, e in enumerate(ents):
             if i != 0:
-                if ents[i-1]["end"] + 1 == ents[i]["start"] and ents[i-1]["label"] == ents[i]["label"]:
+                if ents[i-1]["end"] + 1 == ents[i]["start"] and \
+                   ents[i-1]["label"] == ents[i]["label"]:
+
                     ents_[-1]["end"] = ents[i]["end"]
                 else:
                     ents_.append(ents[i])

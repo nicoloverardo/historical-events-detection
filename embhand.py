@@ -20,9 +20,15 @@ class EmbeddingsHandler():
     @staticmethod
     def find_closest_embeddings(embeddings_dict, embedding, limit=6):
         if limit is None:
-            return sorted(embeddings_dict.keys(), key=lambda w: spatial.distance.cosine(embeddings_dict[w], embedding))
+            return sorted(embeddings_dict.keys(),
+                          key=lambda w: spatial.distance.cosine(
+                              embeddings_dict[w], 
+                              embedding))
         else:
-            return sorted(embeddings_dict.keys(), key=lambda w: spatial.distance.cosine(embeddings_dict[w], embedding))[1:limit]
+            return sorted(embeddings_dict.keys(),
+                          key=lambda w: spatial.distance.cosine(
+                              embeddings_dict[w], 
+                              embedding))[1:limit]
 
     @staticmethod
     def reduce_dim(data, random_state=42):
@@ -31,7 +37,10 @@ class EmbeddingsHandler():
 
     @staticmethod
     def load_glove(path, nrows=None):
-        return pd.read_csv(path, sep=" ", index_col=0, header=None, quoting=csv.QUOTE_NONE, na_values=None, keep_default_na=False, nrows=nrows)
+        return pd.read_csv(path, sep=" ", index_col=0,
+                           header=None, quoting=csv.QUOTE_NONE,
+                           na_values=None, keep_default_na=False,
+                           nrows=nrows)
     
     @staticmethod
     def vec(words, w):
@@ -53,7 +62,8 @@ class EmbeddingsHandler():
     def get_indices_intersection(df1, df2, sort_indices=True):
         inters = df1.index.intersection(df2.index)
 
-        df1, df2 = (df1[df1.index.isin(inters)], df2[df2.index.isin(inters)])
+        df1, df2 = (df1[df1.index.isin(inters)],
+                    df2[df2.index.isin(inters)])
 
         if sort_indices:
             df1.sort_index(inplace=True)
@@ -76,8 +86,11 @@ class EmbeddingsHandler():
 
             plt.scatter(Y[:, 0], Y[:, 1])
 
-            for label, x, y in zip(j.index.values, Y[:, 0], Y[:, 1]):
-                plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords="offset points")
+            zipped = zip(j.index.values, Y[:, 0], Y[:, 1])
+
+            for label, x, y in zipped:
+                plt.annotate(label, xy=(x, y),
+                             xytext=(0, 0), textcoords="offset points")
 
         plt.show()
 
@@ -89,7 +102,11 @@ class EmbeddingsHandler():
     @staticmethod
     def reshape_vocab(vocab1, vocab2):
         common = (set(vocab1.keys())).intersection(set(vocab2.keys()))
-        return {k: vocab1[k] for k in common}, {k: vocab2[k] for k in common}
+
+        dict1 = {k: vocab1[k] for k in common}
+        dict2 = {k: vocab2[k] for k in common}
+
+        return dict1, dict2 
 
     @staticmethod
     def rotate_emb(d1, d2):
@@ -130,5 +147,9 @@ class EmbeddingsHandler():
     @staticmethod
     def _draw_vector(df, word, ax, color):
         df_red = EmbeddingsHandler.get_df(df)
-        vec = df_red.iloc[df_red[df_red["word"] == word].index.values[0], 1:].to_numpy()
-        ax.arrow(0.0, 0.0, vec[0], vec[1], head_width=0.2, head_length=0.2, fc=color, ec=color)
+        vec = df_red.iloc[df_red[df_red["word"] == word]
+                            .index.values[0], 1:].to_numpy()
+
+        ax.arrow(0.0, 0.0, vec[0], vec[1],
+                 head_width=0.2, head_length=0.2,
+                 fc=color, ec=color)
