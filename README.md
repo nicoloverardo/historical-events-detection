@@ -3,6 +3,8 @@ Project for the Knowledge Extraction and Information Retrieval exam. The PDF rep
 
 The dataset contained in the `data/histo` folder is called HISTO. You can find the official repository [here](https://github.com/dhfbk/Histo).
 
+Full .txt word embeddings are not provided; instead, a compressed representation of them is present in the `data/histo` folder. Take a look at the [README](/wordemb/README.md) in the `wordemb` folder for more information.
+
 ## Usage
 Here we report the order one should follow when looking at this work:
 
