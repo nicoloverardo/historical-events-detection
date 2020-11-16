@@ -1,5 +1,5 @@
 # Historical events detection
-Project for the Knowledge Extraction and Information Retrieval exam. The PDF report can be found [here](/Make_History_Count.pdf).
+Project for the Knowledge Extraction and Information Retrieval exam. The PDF report can be found [here](/Making_History_Count.pdf).
 
 The dataset contained in the `data/histo` folder is called HISTO. You can find the official repository [here](https://github.com/dhfbk/Histo).
 
